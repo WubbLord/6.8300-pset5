@@ -1,0 +1,9 @@
+# If running on Google Colab, these should come pre-installed. If running on your own GPUs, you'll need to install the following requirements
+torch
+torchvision
+numpy
+matplotlib
+scikit-learn
+tqdm
+jupyterlab
+diffusers
