@@ -27,7 +27,7 @@ In this part, we will be working in the ipynb file in `part2/`, corresponding to
 
 ### Submission Guidelines for Part 2
 
-Please include your answer to all problems, including formulas, proofs, and the figures generated in each problem, excluding code. You are required to submit the (single) PDF titled `part2.pdf` and all (four) notebooks with your code and running outputs. Do not include code in the PDF file. 
+Please include your answer to all problems, including formulas, proofs, and the figures generated in each problem, excluding code. You are required to submit the (single) PDF titled `part2.pdf` and the corresponding notebook with your code and running outputs. Do not include code in the PDF file. 
 
 Specifically, the PDF should contain:
 - Problem 1
