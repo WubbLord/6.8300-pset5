@@ -263,7 +263,7 @@ def find_nearest_neighbors(
         indices: A numpy array of shape (k,) containing the indices of the k nearest neighbors of the query features in the features array.
         similarities: A numpy array of shape (k,) containing the similarities between the query features and the nearest neighbors.
     """
-   pass
+    pass
 
 def visualize_nearest_neighbors(photo_features, sketch_features, method_name, query_index, k=5):
     _, axes = plt.subplots(1, k + 1, figsize=(3 * (k + 1), 3))
