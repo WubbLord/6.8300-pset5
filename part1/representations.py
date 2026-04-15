@@ -159,8 +159,30 @@ def get_features(
         labels: A numpy array of shape (num_examples,) containing the labels (used to construct the FeaturesDataset).
         num_classes: The number of classes in the dataset (used to construct the FeaturesDataset).
     """
+    dataset = FruitDataset(split_name, transform=feature_extractor.transform)
+    loader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+    )
 
-    pass
+    all_features = []
+    all_labels = []
+
+    feature_extractor.eval()
+    with torch.no_grad():
+        for x, y in tqdm(loader, desc=f"Extracting features ({split_name})"):
+            x = x.to(device)
+            features = feature_extractor(x)
+            if features.ndim > 2:
+                features = features.flatten(start_dim=1)
+            all_features.append(features.cpu().numpy())
+            all_labels.append(y.numpy())
+
+    features = np.concatenate(all_features, axis=0)
+    labels = np.concatenate(all_labels, axis=0)
+    return features, labels, dataset.num_classes
 
 
 
@@ -208,9 +230,43 @@ def train_linear_probe(
         linear_probe: A torch.nn.Linear object representing the trained linear probe.
         epoch_losses: A list of length num_epochs containing the average loss over each epoch.
     """
+    loader = DataLoader(
+        features_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+    )
 
+    num_features = features_dataset.features.shape[1]
+    linear_probe = nn.Linear(num_features, features_dataset.num_classes).to(device)
+    optimizer = torch.optim.Adam(
+        linear_probe.parameters(),
+        lr=learning_rate,
+        weight_decay=weight_decay,
+    )
 
-    pass
+    epoch_losses = []
+    linear_probe.train()
+    for _ in tqdm(range(num_epochs), desc="Training linear probe"):
+        total_loss = 0.0
+        total_examples = 0
+        for x, y in loader:
+            x = x.to(device=device, dtype=torch.float32)
+            y = y.to(device=device, dtype=torch.long)
+
+            optimizer.zero_grad()
+            logits = linear_probe(x)
+            loss = F.cross_entropy(logits, y)
+            loss.backward()
+            optimizer.step()
+
+            batch_size_actual = y.shape[0]
+            total_loss += loss.item() * batch_size_actual
+            total_examples += batch_size_actual
+
+        epoch_losses.append(total_loss / total_examples)
+
+    return linear_probe, epoch_losses
 
 
 
@@ -263,7 +319,14 @@ def find_nearest_neighbors(
         indices: A numpy array of shape (k,) containing the indices of the k nearest neighbors of the query features in the features array.
         similarities: A numpy array of shape (k,) containing the similarities between the query features and the nearest neighbors.
     """
-    pass
+    query_norm = np.linalg.norm(query_features)
+    feature_norms = np.linalg.norm(features, axis=1)
+    similarities = features @ query_features / (
+        np.maximum(feature_norms * query_norm, 1e-12)
+    )
+
+    nearest_indices = np.argsort(similarities)[-k:][::-1]
+    return nearest_indices, similarities[nearest_indices]
 
 def visualize_nearest_neighbors(photo_features, sketch_features, method_name, query_index, k=5):
     _, axes = plt.subplots(1, k + 1, figsize=(3 * (k + 1), 3))
